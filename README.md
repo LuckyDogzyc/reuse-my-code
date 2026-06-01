@@ -86,11 +86,51 @@ reuse get fastapi-safe-file-validation
 reuse bundle "给我的 FastAPI 项目加一个安全文件上传功能" --language python --framework fastapi
 ```
 
+Run the demo:
+
+```bash
+python examples/demo_fastapi_safe_upload.py
+```
+
 Try the API:
 
 ```bash
-curl -s -X POST http://127.0.0.1:8000/plan   -H 'content-type: application/json'   -d '{"goal":"给我的 FastAPI 项目加一个安全文件上传功能","language":"python","framework":"fastapi"}' | python -m json.tool
+curl -s -X POST http://127.0.0.1:8000/plan \
+  -H 'content-type: application/json' \
+  -d '{"goal":"给我的 FastAPI 项目加一个安全文件上传功能","language":"python","framework":"fastapi"}'
 ```
+
+## MCP server
+
+Phase 1 also exposes a stdio MCP server so coding agents can call Reuse My Code directly.
+
+Local command:
+
+```bash
+reuse-mcp
+```
+
+Example client configuration:
+
+```json
+{
+  "mcpServers": {
+    "reuse-my-code": {
+      "command": "reuse-mcp",
+      "args": []
+    }
+  }
+}
+```
+
+Available MCP tools:
+
+| Tool | Purpose |
+|---|---|
+| `reuse_plan` | Decompose a broad coding goal into medium-grained tasks. |
+| `reuse_search` | Search platform capabilities for one task. |
+| `reuse_get` | Fetch code, unit tests, dependencies, and instructions for one capability. |
+| `reuse_bundle` | Plan a goal and return matched task-level capabilities in one response. |
 
 ## Repository layout
 

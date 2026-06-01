@@ -43,8 +43,8 @@
 - Deterministic task planner，先覆盖 FastAPI 安全文件上传模板。
 - Structured metadata search，不依赖平台 LLM。
 - 返回 code、unit test、dependencies、boundaries、instructions_for_agent。
-- API + CLI。
-- MVP 测试覆盖 plan/search/get/bundle。
+- API + CLI + stdio MCP server.
+- MVP 测试覆盖 plan/search/get/bundle 和 MCP tool wrappers。
 
 ### Out of scope
 

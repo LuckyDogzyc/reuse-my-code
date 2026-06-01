@@ -1,4 +1,4 @@
-from reuse_my_code.mcp_server import bundle_tool, get_tool, plan_tool, search_tool
+from reuse_my_code.mcp_server import bundle_tool, get_tool, plan_tool, search_tool, verify_tool
 
 
 def test_mcp_plan_tool_exposes_task_decomposition():
@@ -26,3 +26,10 @@ def test_mcp_search_get_and_bundle_tools_return_agent_consumable_payloads():
 
 def test_mcp_get_tool_returns_error_for_unknown_asset():
     assert get_tool("missing-asset") == {"error": "capability not found", "asset_id": "missing-asset"}
+
+
+def test_mcp_verify_tool_reports_missing_files(tmp_path):
+    result = verify_tool("fastapi-safe-file-validation", str(tmp_path))
+
+    assert result["status"] == "missing"
+    assert result["files"]

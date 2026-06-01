@@ -81,3 +81,10 @@ def test_api_endpoints_cover_plan_search_get_and_bundle():
     )
     assert bundle.status_code == 200
     assert bundle.json()["results"]
+
+    verify = client.post(
+        "/verify",
+        json={"asset_id": "fastapi-safe-file-validation", "project_path": "."},
+    )
+    assert verify.status_code == 200
+    assert verify.json()["status"] in {"missing", "modified", "verified"}

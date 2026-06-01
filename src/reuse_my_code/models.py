@@ -95,3 +95,26 @@ class BundleResponse(BaseModel):
     goal: str
     results: list[TaskResult]
     integration_test_reminders: list[str] = Field(default_factory=list)
+
+
+class VerifyRequest(BaseModel):
+    asset_id: str
+    project_path: str = "."
+
+
+class FileVerification(BaseModel):
+    path: str
+    role: Literal["core", "unit_test", "instructions", "example"]
+    exists: bool
+    expected_sha256: str
+    actual_sha256: str | None = None
+    hash_match: bool = False
+
+
+class VerifyResponse(BaseModel):
+    asset_id: str
+    project_path: str
+    status: Literal["verified", "missing", "modified", "not_found"]
+    files: list[FileVerification] = Field(default_factory=list)
+    unit_test_command: str | None = None
+    message: str | None = None

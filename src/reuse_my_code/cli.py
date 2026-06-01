@@ -4,9 +4,9 @@ import json
 
 import typer
 
-from .models import BundleRequest, PlanRequest, SearchRequest
+from .models import BundleRequest, PlanRequest, SearchRequest, VerifyRequest
 from .planner import plan_tasks
-from .registry import build_bundle, get_capability, search_capabilities
+from .registry import build_bundle, get_capability, search_capabilities, verify_usage
 
 app = typer.Typer(help="Reuse My Code: task-level code capabilities for AI agents.")
 
@@ -42,3 +42,9 @@ def get_asset(asset_id: str) -> None:
 def bundle(goal: str, language: str = "python", framework: str = "fastapi") -> None:
     """Plan a goal and fetch matched task-level code capabilities."""
     _print(build_bundle(BundleRequest(goal=goal, language=language, framework=framework)))
+
+
+@app.command()
+def verify(asset_id: str, project_path: str = ".") -> None:
+    """Verify whether a project contains unchanged platform-provided capability files."""
+    _print(verify_usage(VerifyRequest(asset_id=asset_id, project_path=project_path)))

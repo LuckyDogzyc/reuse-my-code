@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,9 @@ from .models import (
     SearchResponse,
     TaskResult,
     UnitTestInfo,
+    VerifyRequest,
+    VerifyResponse,
+    FileVerification,
 )
 from .planner import plan_tasks
 
@@ -143,3 +147,59 @@ def build_bundle(request: BundleRequest) -> BundleResponse:
         detail = get_capability(search.matches[0].asset_id)
         results.append(TaskResult(task=task, selected=detail, status="matched"))
     return BundleResponse(goal=request.goal, results=results, integration_test_reminders=reminders)
+
+
+def _content_hash(content: str) -> str:
+    return sha256(content.encode("utf-8")).hexdigest()
+
+
+def _file_hash(path: Path) -> str:
+    return sha256(path.read_bytes()).hexdigest()
+
+
+def verify_usage(request: VerifyRequest) -> VerifyResponse:
+    detail = get_capability(request.asset_id)
+    if detail is None:
+        return VerifyResponse(
+            asset_id=request.asset_id,
+            project_path=request.project_path,
+            status="not_found",
+            message="capability not found",
+        )
+
+    project_root = Path(request.project_path).expanduser().resolve()
+    files: list[FileVerification] = []
+    for expected in detail.files:
+        actual_path = (project_root / expected.path).resolve()
+        expected_sha = _content_hash(expected.content)
+        exists = actual_path.exists() and actual_path.is_file()
+        actual_sha = _file_hash(actual_path) if exists else None
+        files.append(
+            FileVerification(
+                path=expected.path,
+                role=expected.role,
+                exists=exists,
+                expected_sha256=expected_sha,
+                actual_sha256=actual_sha,
+                hash_match=actual_sha == expected_sha,
+            )
+        )
+
+    if all(file.hash_match for file in files):
+        status = "verified"
+        message = "all capability files match platform-provided content"
+    elif any(not file.exists for file in files):
+        status = "missing"
+        message = "one or more capability files are missing"
+    else:
+        status = "modified"
+        message = "all files exist, but one or more hashes differ from platform-provided content"
+
+    return VerifyResponse(
+        asset_id=detail.asset_id,
+        project_path=str(project_root),
+        status=status,
+        files=files,
+        unit_test_command=detail.unit_test.command if detail.unit_test else None,
+        message=message,
+    )

@@ -4,9 +4,9 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-from .models import BundleRequest, PlanRequest, SearchRequest
+from .models import BundleRequest, PlanRequest, SearchRequest, VerifyRequest
 from .planner import plan_tasks
-from .registry import build_bundle, get_capability, search_capabilities
+from .registry import build_bundle, get_capability, search_capabilities, verify_usage
 
 mcp = FastMCP("reuse-my-code")
 
@@ -46,10 +46,16 @@ def bundle_tool(goal: str, language: str = "python", framework: str = "fastapi")
     return build_bundle(BundleRequest(goal=goal, language=language, framework=framework)).model_dump()
 
 
+def verify_tool(asset_id: str, project_path: str = ".") -> dict[str, Any]:
+    """Verify platform-provided capability files inside a customer project."""
+    return verify_usage(VerifyRequest(asset_id=asset_id, project_path=project_path)).model_dump()
+
+
 mcp.tool(name="reuse_plan")(plan_tool)
 mcp.tool(name="reuse_search")(search_tool)
 mcp.tool(name="reuse_get")(get_tool)
 mcp.tool(name="reuse_bundle")(bundle_tool)
+mcp.tool(name="reuse_verify")(verify_tool)
 
 
 def main() -> None:

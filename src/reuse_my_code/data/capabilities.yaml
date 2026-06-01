@@ -155,3 +155,106 @@ capabilities:
       - Treat this as an adapter/template; update imports to match the customer project.
       - Keep validation before storage.
       - Write a project-level integration test using the customer's auth/session setup.
+
+
+  - asset_id: fastapi-pagination-params
+    version: 1.0.0
+    name: FastAPI Pagination Params
+    summary: Validate page and page_size query parameters with safe upper bounds.
+    language: python
+    framework: fastapi
+    capability: pagination_params
+    risk_level: medium
+    dependencies: []
+    provides: ["page_validation", "page_size_limit", "offset_calculation"]
+    does_not_provide: ["database_query", "response_schema"]
+    files:
+      - source: pagination_params.py
+        target_path: app/pagination/params.py
+        role: core
+      - source: test_pagination_params.py
+        target_path: tests/test_pagination_params.py
+        role: unit_test
+    unit_test:
+      command: pytest tests/test_pagination_params.py
+      covers: ["calculates offset", "rejects invalid page", "caps page size"]
+    instructions_for_agent:
+      - Use this for list endpoints that accept page and page_size query params.
+      - Keep max page size bounded to protect the database.
+      - Combine with sqlalchemy_pagination and paginated_response_schema tasks.
+
+  - asset_id: sqlalchemy-offset-limit-pagination
+    version: 1.0.0
+    name: SQLAlchemy Offset Limit Pagination
+    summary: Apply offset and limit to a SQLAlchemy select statement and count total rows.
+    language: python
+    framework: fastapi
+    capability: sqlalchemy_pagination
+    risk_level: medium
+    dependencies: ["sqlalchemy>=2.0"]
+    provides: ["offset_limit_query", "total_count_query"]
+    does_not_provide: ["cursor_pagination", "model_specific_filters", "database_session_factory"]
+    files:
+      - source: sqlalchemy_pagination.py
+        target_path: app/pagination/sqlalchemy_pagination.py
+        role: core
+      - source: test_sqlalchemy_pagination.py
+        target_path: tests/test_sqlalchemy_pagination.py
+        role: unit_test
+    unit_test:
+      command: pytest tests/test_sqlalchemy_pagination.py
+      covers: ["applies limit", "applies offset", "returns total count"]
+    instructions_for_agent:
+      - Use this with SQLAlchemy 2.x select statements.
+      - Keep project-specific filters and ordering outside this helper.
+      - For very large tables, consider cursor pagination as a separate task.
+
+  - asset_id: fastapi-paginated-response-schema
+    version: 1.0.0
+    name: FastAPI Paginated Response Schema
+    summary: Pydantic response model for items, total, page, page_size, and total_pages.
+    language: python
+    framework: fastapi
+    capability: paginated_response_schema
+    risk_level: low
+    dependencies: ["pydantic>=2.0"]
+    provides: ["paginated_response_model", "total_pages_calculation"]
+    does_not_provide: ["database_query", "route_handler"]
+    files:
+      - source: paginated_response.py
+        target_path: app/pagination/response.py
+        role: core
+      - source: test_paginated_response.py
+        target_path: tests/test_paginated_response.py
+        role: unit_test
+    unit_test:
+      command: pytest tests/test_paginated_response.py
+      covers: ["computes total pages", "serializes items"]
+    instructions_for_agent:
+      - Use this as the response_model for list endpoints.
+      - Replace item type annotations with project-specific schemas when integrating.
+
+  - asset_id: fastapi-pagination-route-template
+    version: 1.0.0
+    name: FastAPI Pagination Route Template
+    summary: Route template composing pagination params, SQLAlchemy query helper, and paginated response.
+    language: python
+    framework: fastapi
+    capability: fastapi_pagination_route
+    risk_level: low
+    dependencies: ["sqlalchemy>=2.0"]
+    provides: ["pagination_route_template", "helper_composition"]
+    does_not_provide: ["project_model", "project_filters", "project_integration_test"]
+    files:
+      - source: pagination_route.py
+        target_path: app/api/pagination_route.py
+        role: example
+      - source: test_pagination_route_contract.py
+        target_path: tests/test_pagination_route_contract.py
+        role: unit_test
+    unit_test:
+      command: pytest tests/test_pagination_route_contract.py
+      covers: ["route uses pagination params", "route returns paginated response"]
+    instructions_for_agent:
+      - Treat this as a template; update model, schema, imports, filters, and session dependency.
+      - Write project-level integration tests against the real database/session setup.

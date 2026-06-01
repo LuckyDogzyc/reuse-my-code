@@ -4,6 +4,11 @@
 
 用户的 AI Agent 不应该每次都从零生成代码。第一阶段，Reuse My Code 提供平台维护的 task-level code capabilities：客户 AI 先把用户需求拆成中等粒度任务，再对每个 task 获取平台返回的 code、unit test 和 instructions，最后由客户 AI 集成进项目。
 
+Phase 1 ships two starter FastAPI scenarios:
+
+1. 安全文件上传：auth、permission、file validation、safe filename、local storage、route template。
+2. 分页查询：pagination params、SQLAlchemy offset/limit helper、paginated response schema、route template。
+
 ## 2. First user story
 
 用户说：
@@ -43,8 +48,9 @@
 - Deterministic task planner，先覆盖 FastAPI 安全文件上传模板。
 - Structured metadata search，不依赖平台 LLM。
 - 返回 code、unit test、dependencies、boundaries、instructions_for_agent。
+- verify_usage：检查客户项目中的 capability 文件是否存在、是否保持平台原始 hash。
 - API + CLI + stdio MCP server.
-- MVP 测试覆盖 plan/search/get/bundle 和 MCP tool wrappers。
+- MVP 测试覆盖 plan/search/get/bundle/verify 和 MCP tool wrappers。
 
 ### Out of scope
 

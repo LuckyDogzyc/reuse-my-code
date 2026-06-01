@@ -84,12 +84,14 @@ reuse plan "给我的 FastAPI 项目加一个安全文件上传功能" --languag
 reuse search safe_file_validation --language python --framework fastapi
 reuse get fastapi-safe-file-validation
 reuse bundle "给我的 FastAPI 项目加一个安全文件上传功能" --language python --framework fastapi
+reuse verify fastapi-safe-file-validation --project-path /path/to/customer/project
 ```
 
-Run the demo:
+Run demos:
 
 ```bash
 python examples/demo_fastapi_safe_upload.py
+python examples/demo_fastapi_pagination.py
 ```
 
 Try the API:
@@ -131,6 +133,7 @@ Available MCP tools:
 | `reuse_search` | Search platform capabilities for one task. |
 | `reuse_get` | Fetch code, unit tests, dependencies, and instructions for one capability. |
 | `reuse_bundle` | Plan a goal and return matched task-level capabilities in one response. |
+| `reuse_verify` | Verify whether customer project files still match platform-provided capability files. |
 
 ## Repository layout
 

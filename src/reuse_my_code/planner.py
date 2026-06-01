@@ -13,6 +13,14 @@ FASTAPI_SAFE_UPLOAD_TASKS = [
     ("integration_test", "项目级集成测试提醒", "customer_project_integration_test", False),
 ]
 
+FASTAPI_PAGINATION_TASKS = [
+    ("pagination_params", "分页参数校验", "pagination_params", True),
+    ("sqlalchemy_pagination", "SQLAlchemy offset/limit 分页查询", "sqlalchemy_pagination", True),
+    ("paginated_response", "分页响应结构", "paginated_response_schema", True),
+    ("pagination_route", "FastAPI 分页接口路由模板", "fastapi_pagination_route", True),
+    ("integration_test", "项目级集成测试提醒", "customer_project_integration_test", False),
+]
+
 
 def plan_tasks(request: PlanRequest) -> PlanResponse:
     """Deterministic Phase-1 planner.
@@ -27,7 +35,32 @@ def plan_tasks(request: PlanRequest) -> PlanResponse:
     language = (request.language or request.project_context.language if request.project_context else request.language).lower()
 
     is_upload = any(token in goal_lower for token in ["upload", "上传", "file", "文件"])
+    is_pagination = any(token in goal_lower for token in ["pagination", "paginate", "分页", "page", "limit"])
     is_fastapi = framework == "fastapi" or "fastapi" in goal_lower
+
+    if language == "python" and is_fastapi and is_pagination:
+        tasks = [
+            Task(
+                task_id=task_id,
+                title=title,
+                capability=capability,
+                language="python",
+                framework="fastapi",
+                required=True,
+                provided_by_platform=provided,
+                rationale="分页查询需要按参数校验、查询、响应结构、路由模板拆分，逐 task 检索代码。",
+            )
+            for task_id, title, capability, provided in FASTAPI_PAGINATION_TASKS
+        ]
+        return PlanResponse(
+            goal=request.goal,
+            tasks=tasks,
+            notes_for_agent=[
+                "先复用分页参数、查询 helper 和响应 schema，再接入项目路由。",
+                "平台提供 task-level unit test；项目级 integration test 由客户 AI 根据真实模型和数据库编写。",
+                "不要把分页 helper 绑定到单一 ORM model，保持中等粒度可复用。",
+            ],
+        )
 
     if language == "python" and is_fastapi and is_upload:
         tasks = [
@@ -65,5 +98,5 @@ def plan_tasks(request: PlanRequest) -> PlanResponse:
                 rationale="当前 MVP 暂无专用模板，使用通用能力检索。",
             )
         ],
-        notes_for_agent=["当前 MVP 主要覆盖 Python/FastAPI 安全文件上传场景。"],
+        notes_for_agent=["当前 MVP 主要覆盖 Python/FastAPI 安全文件上传和分页查询场景。"],
     )

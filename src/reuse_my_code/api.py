@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException
 
-from .models import BundleRequest, PlanRequest, SearchRequest
+from .models import BundleRequest, PlanRequest, SearchRequest, VerifyRequest
 from .planner import plan_tasks
-from .registry import build_bundle, get_capability, search_capabilities
+from .registry import build_bundle, get_capability, search_capabilities, verify_usage
 
 app = FastAPI(
     title="Reuse My Code",
@@ -39,3 +39,8 @@ def capability(asset_id: str):
 @app.post("/bundle")
 def bundle(request: BundleRequest):
     return build_bundle(request)
+
+
+@app.post("/verify")
+def verify(request: VerifyRequest):
+    return verify_usage(request)

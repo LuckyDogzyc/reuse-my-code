@@ -18,9 +18,9 @@ from .models import (
     SearchResponse,
     TaskResult,
     UnitTestInfo,
+    FileVerification,
     VerifyRequest,
     VerifyResponse,
-    FileVerification,
 )
 from .planner import plan_tasks
 
@@ -83,11 +83,13 @@ def get_capability(asset_id: str) -> CapabilityDetail | None:
     files = []
     for file_spec in item.get("files", []):
         path = DATA_DIR / "capabilities" / asset_id / file_spec["source"]
+        content = path.read_text(encoding="utf-8")
         files.append(
             CapabilityFile(
                 path=file_spec["target_path"],
                 role=file_spec["role"],
-                content=path.read_text(encoding="utf-8"),
+                content=content,
+                content_sha256=_content_hash(content),
             )
         )
 
@@ -155,6 +157,33 @@ def _content_hash(content: str) -> str:
 
 def _file_hash(path: Path) -> str:
     return sha256(path.read_bytes()).hexdigest()
+
+
+def validate_registry_consistency() -> list[str]:
+    errors: list[str] = []
+    seen_asset_ids: set[str] = set()
+    for item in load_registry():
+        asset_id = item.get("asset_id", "")
+        if not asset_id:
+            errors.append("registry entry missing asset_id")
+            continue
+        if asset_id in seen_asset_ids:
+            errors.append(f"duplicate asset_id: {asset_id}")
+        seen_asset_ids.add(asset_id)
+        for required in ["version", "name", "summary", "language", "framework", "capability"]:
+            if required not in item:
+                errors.append(f"{asset_id}: missing required field {required}")
+        for file_spec in item.get("files", []):
+            source = file_spec.get("source")
+            target_path = file_spec.get("target_path")
+            role = file_spec.get("role")
+            if not source or not target_path or not role:
+                errors.append(f"{asset_id}: file spec must include source, target_path, and role")
+                continue
+            source_path = DATA_DIR / "capabilities" / asset_id / source
+            if not source_path.exists():
+                errors.append(f"{asset_id}: missing source file {source}")
+    return errors
 
 
 def verify_usage(request: VerifyRequest) -> VerifyResponse:

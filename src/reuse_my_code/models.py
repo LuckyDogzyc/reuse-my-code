@@ -65,6 +65,7 @@ class CapabilityFile(BaseModel):
     path: str
     role: Literal["core", "unit_test", "instructions", "example"]
     content: str
+    content_sha256: str
 
 
 class UnitTestInfo(BaseModel):

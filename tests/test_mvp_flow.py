@@ -37,6 +37,7 @@ def test_get_capability_returns_code_tests_and_agent_instructions():
     assert detail.instructions_for_agent
     assert detail.unit_test is not None
     assert "pytest" in detail.unit_test.command
+    assert all(file.content_sha256 for file in detail.files)
 
 
 def test_bundle_matches_each_platform_provided_task_and_marks_integration_test_external():

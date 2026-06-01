@@ -1,0 +1,157 @@
+capabilities:
+  - asset_id: fastapi-current-user-jwt
+    version: 1.0.0
+    name: FastAPI Current User JWT Dependency
+    summary: Decode a Bearer JWT and return the current user identity for route dependencies.
+    language: python
+    framework: fastapi
+    capability: current_user_dependency
+    risk_level: high
+    dependencies: ["python-jose[cryptography]"]
+    provides: ["jwt_bearer_decode", "current_user_dependency"]
+    does_not_provide: ["password_login", "user_database_lookup", "role_authorization"]
+    files:
+      - source: current_user.py
+        target_path: app/security/current_user.py
+        role: core
+      - source: test_current_user.py
+        target_path: tests/test_current_user.py
+        role: unit_test
+    unit_test:
+      command: pytest tests/test_current_user.py
+      covers: ["rejects missing bearer token", "decodes subject claim", "rejects invalid token"]
+    instructions_for_agent:
+      - Use this dependency when a route needs an authenticated user identity from JWT.
+      - Replace get_jwt_secret() with the project's settings object or environment loader.
+      - Do not treat this as role authorization; pair it with a permission_check task.
+
+  - asset_id: fastapi-role-permission-check
+    version: 1.0.0
+    name: FastAPI Role Permission Check
+    summary: Small dependency factory for requiring a user role before allowing an endpoint.
+    language: python
+    framework: fastapi
+    capability: permission_check
+    risk_level: high
+    dependencies: []
+    provides: ["role_required", "permission_check"]
+    does_not_provide: ["jwt_decode", "database_acl", "object_ownership_check"]
+    files:
+      - source: permissions.py
+        target_path: app/security/permissions.py
+        role: core
+      - source: test_permissions.py
+        target_path: tests/test_permissions.py
+        role: unit_test
+    unit_test:
+      command: pytest tests/test_permissions.py
+      covers: ["allows required role", "rejects missing role", "rejects insufficient role"]
+    instructions_for_agent:
+      - Use after current_user dependency has produced a user object or dict with a role field.
+      - Keep object-level owner checks separate when uploads are tied to a resource owner.
+
+  - asset_id: fastapi-safe-file-validation
+    version: 1.0.0
+    name: FastAPI Safe File Validation
+    summary: Validate UploadFile filename, extension, content type, and size before storage.
+    language: python
+    framework: fastapi
+    capability: safe_file_validation
+    risk_level: high
+    dependencies: ["python-multipart"]
+    provides: ["max_size_check", "extension_allowlist", "mime_type_check", "empty_filename_rejection"]
+    does_not_provide: ["authentication", "authorization", "storage", "database_record_creation"]
+    config_schema:
+      max_file_size_mb: {type: integer, default: 5}
+      allowed_extensions: {type: array, default: [".jpg", ".png", ".webp"]}
+      allowed_content_types: {type: array, default: ["image/jpeg", "image/png", "image/webp"]}
+    files:
+      - source: file_validation.py
+        target_path: app/services/file_validation.py
+        role: core
+      - source: test_file_validation.py
+        target_path: tests/test_file_validation.py
+        role: unit_test
+    unit_test:
+      command: pytest tests/test_file_validation.py
+      covers: ["rejects oversized files", "rejects unsupported extensions", "rejects unsupported MIME", "accepts allowed image files"]
+    instructions_for_agent:
+      - Call validate_upload_file(file) before saving any uploaded content.
+      - Do not skip MIME and extension checks for user-controlled uploads.
+      - This asset does not persist files; combine it with a storage task.
+
+  - asset_id: python-safe-filename
+    version: 1.0.0
+    name: Python Safe Filename Generation
+    summary: Normalize user filenames and generate collision-resistant safe storage names.
+    language: python
+    framework: fastapi
+    capability: safe_filename_generation
+    risk_level: high
+    dependencies: []
+    provides: ["path_traversal_defense", "filename_normalization", "random_suffix"]
+    does_not_provide: ["file_validation", "storage"]
+    files:
+      - source: safe_filename.py
+        target_path: app/services/safe_filename.py
+        role: core
+      - source: test_safe_filename.py
+        target_path: tests/test_safe_filename.py
+        role: unit_test
+    unit_test:
+      command: pytest tests/test_safe_filename.py
+      covers: ["strips path components", "keeps extension", "generates unique names"]
+    instructions_for_agent:
+      - Use this after validation and before storage.
+      - Do not use the original client filename as the storage path.
+
+  - asset_id: python-local-file-storage
+    version: 1.0.0
+    name: Python Local File Storage
+    summary: Store uploaded bytes under a configured base directory without allowing path escape.
+    language: python
+    framework: fastapi
+    capability: local_file_storage
+    risk_level: medium
+    dependencies: []
+    provides: ["safe_base_dir_storage", "directory_creation"]
+    does_not_provide: ["cloud_storage", "file_validation", "database_record_creation"]
+    files:
+      - source: local_storage.py
+        target_path: app/services/local_storage.py
+        role: core
+      - source: test_local_storage.py
+        target_path: tests/test_local_storage.py
+        role: unit_test
+    unit_test:
+      command: pytest tests/test_local_storage.py
+      covers: ["creates upload directory", "rejects path escape", "writes bytes"]
+    instructions_for_agent:
+      - Keep the base directory outside executable source directories when possible.
+      - Store database metadata in project-specific code, not this core storage helper.
+
+  - asset_id: fastapi-upload-route-template
+    version: 1.0.0
+    name: FastAPI Upload Route Template
+    summary: Route template that composes current user, permission, validation, safe filename, and storage helpers.
+    language: python
+    framework: fastapi
+    capability: fastapi_upload_route
+    risk_level: medium
+    dependencies: ["python-multipart"]
+    provides: ["upload_route_template", "helper_composition"]
+    does_not_provide: ["project_database_model", "project_integration_test"]
+    files:
+      - source: upload_route.py
+        target_path: app/api/upload_route.py
+        role: example
+      - source: test_upload_route_contract.py
+        target_path: tests/test_upload_route_contract.py
+        role: unit_test
+    unit_test:
+      command: pytest tests/test_upload_route_contract.py
+      covers: ["route calls validation before storage", "route returns stored path"]
+    instructions_for_agent:
+      - Treat this as an adapter/template; update imports to match the customer project.
+      - Keep validation before storage.
+      - Write a project-level integration test using the customer's auth/session setup.

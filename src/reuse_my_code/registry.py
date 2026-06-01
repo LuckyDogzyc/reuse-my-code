@@ -50,6 +50,25 @@ def _score(capability: dict[str, Any], request: SearchRequest) -> float:
     return round(min(score, 1.0), 2)
 
 
+def list_capabilities() -> list[CapabilitySummary]:
+    return [
+        CapabilitySummary(
+            asset_id=item["asset_id"],
+            version=str(item["version"]),
+            name=item["name"],
+            summary=item["summary"],
+            language=item["language"],
+            framework=item["framework"],
+            capability=item["capability"],
+            fit_score=1.0,
+            risk_level=item.get("risk_level", "medium"),
+            provides=item.get("provides", []),
+            does_not_provide=item.get("does_not_provide", []),
+        )
+        for item in load_registry()
+    ]
+
+
 def search_capabilities(request: SearchRequest) -> SearchResponse:
     matches: list[CapabilitySummary] = []
     for item in load_registry():

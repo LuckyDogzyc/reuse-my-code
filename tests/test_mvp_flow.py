@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from reuse_my_code.api import app
 from reuse_my_code.models import BundleRequest, PlanRequest, SearchRequest
 from reuse_my_code.planner import plan_tasks
-from reuse_my_code.registry import build_bundle, get_capability, search_capabilities
+from reuse_my_code.registry import build_bundle, get_capability, list_capabilities, search_capabilities
 
 
 def test_safe_upload_goal_is_decomposed_into_medium_grained_tasks():
@@ -40,6 +40,14 @@ def test_get_capability_returns_code_tests_and_agent_instructions():
     assert all(file.content_sha256 for file in detail.files)
 
 
+def test_list_capabilities_returns_public_catalog_summaries():
+    catalog = list_capabilities()
+
+    assert len(catalog) >= 10
+    assert any(item.asset_id == "fastapi-safe-file-validation" for item in catalog)
+    assert any(item.asset_id == "fastapi-pagination-params" for item in catalog)
+
+
 def test_bundle_matches_each_platform_provided_task_and_marks_integration_test_external():
     bundle = build_bundle(
         BundleRequest(goal="给我的 FastAPI 项目加一个安全文件上传功能", language="python", framework="fastapi")
@@ -57,6 +65,14 @@ def test_api_endpoints_cover_plan_search_get_and_bundle():
 
     health = client.get("/health")
     assert health.status_code == 200
+
+    home = client.get("/")
+    assert home.status_code == 200
+    assert "Make coding easier for agents" in home.text
+
+    catalog = client.get("/capabilities")
+    assert catalog.status_code == 200
+    assert len(catalog.json()["capabilities"]) >= 10
 
     plan = client.post(
         "/plan",

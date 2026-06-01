@@ -94,6 +94,18 @@ python examples/demo_fastapi_safe_upload.py
 python examples/demo_fastapi_pagination.py
 ```
 
+Run the API and web UI:
+
+```bash
+uvicorn reuse_my_code.api:app --reload
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8000/
+```
+
 Try the API:
 
 ```bash
